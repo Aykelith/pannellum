@@ -394,7 +394,7 @@ function init() {
  */
 function absoluteURL(url) {
     // From http://stackoverflow.com/a/19709846
-    return new RegExp('^(?:[a-z]+:)?//', 'i').test(url) | url[0] == '/';
+    return new RegExp('^(?:[a-z]+:)?//', 'i').test(url) | url[0] == '/' | url.slice(0, 5) == 'blob:';
 };
 
 /**
@@ -1618,6 +1618,13 @@ function createHotSpot(hs) {
         span.style.marginLeft = -(span.scrollWidth - div.offsetWidth) / 2 + 'px';
         span.style.marginTop = -span.scrollHeight - 12 + 'px';
     }
+    if (hs.clickHandlerFunc) {
+        div.addEventListener('click', function(e) {
+            hs.clickHandlerFunc(e, hs.clickHandlerArgs);
+        }, 'false');
+        div.style.cursor = 'pointer';
+        span.style.cursor = 'pointer';
+    }
     hs.div = div;
 };
 
@@ -2420,6 +2427,33 @@ this.getScene = function() {
 }
 
 /**
+ * Add a new scene.
+ * @memberof Viewer
+ * @instance
+ * @param {string} sceneId - The ID of the new scene
+ * @param {string} config - The configuration of the new scene
+ * @returns {Viewer} `this`
+ */
+this.addScene = function(sceneId, config) {
+    initialConfig.scenes[sceneId] = config;
+    return this;
+};
+
+/**
+ * Remove a scene.
+ * @memberof Viewer
+ * @instance
+ * @param {string} sceneId - The ID of the scene
+ * @returns {boolean} False if the scene is the current scene or if the scene doesn't exists, else true
+ */
+this.removeScene = function(sceneId) {
+    if (config.scene === sceneId || !initialConfig.scenes.hasOwnProperty(sceneId))
+        return false;
+    delete initialConfig.scenes[sceneId];
+    return true;
+};
+
+/**
  * Toggle fullscreen.
  * @memberof Viewer
  * @instance
@@ -2445,12 +2479,23 @@ this.getConfig = function() {
  * @memberof Viewer
  * @instance
  * @param {Object} hs - The configuration for the hot spot
+ * @param {string} [sceneId] - Adds hot spot to specified scene if provided, else to current scene
  * @returns {Viewer} `this`
+ * @throws Throws an error if the scene ID is provided but invalid
  */
-this.addHotSpot = function(hs) {
-    createHotSpot(hs);
-    config.hotSpots.push(hs);
-    renderHotSpot(hs);
+this.addHotSpot = function(hs, sceneId) {
+    if (sceneId === undefined || config.scene == sceneId) {
+        // Add to current scene
+        createHotSpot(hs);
+        config.hotSpots.push(hs);
+        renderHotSpot(hs);
+    } else {
+        // Add to a different scene
+        if (initialConfig.scenes.hasOwnProperty(sceneId))
+            initialConfig.scenes[sceneId].hotSpots.push(hs);
+        else
+            throw 'Invalid scene ID!'
+    }
     return this;
 }
 
@@ -2466,8 +2511,8 @@ this.removeHotSpot = function(hotSpotId) {
         return false;
     for (var i = 0; i < config.hotSpots.length; i++) {
         if (config.hotSpots[i].hasOwnProperty('id') &&
-            // Delete hot spot DOM elements
             config.hotSpots[i].id === hotSpotId) {
+            // Delete hot spot DOM elements
             var current = config.hotSpots[i].div;
             while (current.parentNode != renderContainer)
                 current = current.parentNode;

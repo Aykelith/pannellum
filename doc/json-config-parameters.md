@@ -203,6 +203,23 @@ Specifies the yaw of the target scene, in degrees.
 
 Specifies the HFOV of the target scene, in degrees.
 
+#### `cssClass` (string)
+
+If specified, string is used as the CSS class for the hot spot instead of the
+default CSS classes.
+
+#### `createTooltipFunc` (function) and `createTooltipArgs` (object)
+
+If `createTooltipFunc` is specified, this function is used to create the hot
+spot tooltip DOM instead of the default function. The contents of
+`createTooltipArgs` are passed to the function as arguments.
+
+#### `clickHandlerFunc` (function) and `clickHandlerArgs` (object)
+
+If `clickHandlerFunc` is specified, this function is added as an event handler
+for the hot spot's `click` event. The event object and the contents of
+`clickHandlerArgs` are passed to the function as arguments.
+
 ### `hotSpotDebug` (boolean)
 
 When `true`, the mouse pointer's pitch and yaw are logged to the console when
